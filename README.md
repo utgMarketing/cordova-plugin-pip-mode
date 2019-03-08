@@ -1,6 +1,8 @@
 # PIP Plugin
 Cordova plugin to enable PictureinPicture support for android > 8.0
 
+Based on the plugin [cordova-plugin-pip](https://www.npmjs.com/package/cordova-plugin-pip) present in the npm repository. 
+
 ## API
 
 Methods:
