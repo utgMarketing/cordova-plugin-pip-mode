@@ -14,13 +14,13 @@ Methods:
               function(error){console.log(error)});
     ```
     
-* **isPip**(streamId: int, success: function, error: function)
+* **isPip**(success: function, error: function)
     * Call to check if it is in pip mode. Returns **_true_** or **_false_** in the success function.
     Example: 
     ```javascript
-        cordova.plugins.PIPPlugin.isPip(0,
-              function(volume){console.log(volume)},
-              function(error){console.log(error)});
+        cordova.plugins.PIPPlugin.isPip(
+          function(result){console.log(result)},
+          function(error){console.log(error)});
     ```
     
 * **isPipModeSupported**(success: function, error: function)
