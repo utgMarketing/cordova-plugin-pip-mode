@@ -1,17 +1,20 @@
-var exec = require('cordova/exec');
-
-exports.enter = function (width, height, success, error) {
-    exec(success, error, "PIPPlugin", "enter", [width, height]);
-};
-
-exports.isPip = function (success, error) {
-    exec(success, error, "PIPPlugin", "isPip", []);
-};
-
-exports.onPipModeChanged = function (success, error) {
-    exec(success, error, "PIPPlugin", "onPipModeChanged", []);
-};
-
-exports.isPipModeSupported = function (success, error) {
-    exec(success, error, "PIPPlugin", "isPipModeSupported", []);
-};
+cordova.addConstructor(function (){
+	var exec = cordova.exec;
+	window.PictureInPicture = {
+		enter: function (width, height, success, error) {
+			exec(success, error, "PIPPlugin", "enter", [width, height]);
+		},
+		initializePip: function (success, error) {
+			exec(success, error, "PIPPlugin", "initializePip", []);
+		},
+		isPip: function (success, error) {
+			exec(success, error, "PIPPlugin", "isPip", []);
+		},
+		onPipModeChanged: function (success, error) {
+			exec(success, error, "PIPPlugin", "onPipModeChanged", []);
+		},
+		isPipModeSupported: function (success, error) {
+			exec(success, error, "PIPPlugin", "isPipModeSupported", []);
+		}
+	}
+})

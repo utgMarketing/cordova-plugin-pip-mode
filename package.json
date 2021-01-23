@@ -1,16 +1,16 @@
 {
-  "name": "com.outsystems.experts.plugins.pip",
+  "name": "tv.megacubo.pip",
   "version": "0.0.1",
   "description": "",
   "cordova": {
-    "id": "com.outsystems.experts.plugins.pip",
+    "id": "tv.megacubo.pip",
     "platforms": [
       "android"
     ]
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OutSystemsExperts/outsystems-experts-plugins-pip.git"
+    "url": "git+https://github.com/efoxbr/cordova-plugin-pip-mode.git"
   },
   "keywords": [
     "ecosystem:cordova",
@@ -19,7 +19,7 @@
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/OutSystemsExperts/outsystems-experts-plugins-pip/issues"
+    "url": "https://github.com/efoxbr/cordova-plugin-pip-mode/issues"
   },
-  "homepage": "https://github.com/OutSystemsExperts/outsystems-experts-plugins-pip#readme"
+  "homepage": "https://github.com/efoxbr/cordova-plugin-pip-mode#readme"
 }

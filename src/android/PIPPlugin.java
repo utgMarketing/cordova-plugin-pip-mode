@@ -1,5 +1,4 @@
-package com.outsystems.experts.plugins.pip;
-
+package tv.megacubo.pip;
 import android.content.Context;
 import android.content.Intent;
 import android.app.PictureInPictureParams;
@@ -7,27 +6,26 @@ import android.util.Rational;
 import android.util.Log;
 import android.os.Bundle;
 import android.os.Build;
-
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.PluginResult;
 import android.content.res.Configuration;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class PIPPlugin extends CordovaPlugin {
-    private final PictureInPictureParams.Builder pictureInPictureParamsBuilder = new PictureInPictureParams.Builder();
+    private PictureInPictureParams.Builder pictureInPictureParamsBuilder = null;
     private CallbackContext callback = null;
-
+	private String TAG = "PIPPlugin";
+	
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
     }
-
-    @Override
+    
+    @Override    
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         if(action.equals("enter")){
             Double width = args.getDouble(0);
@@ -47,10 +45,10 @@ public class PIPPlugin extends CordovaPlugin {
         } else if(action.equals("isPipModeSupported")){
             this.isPipModeSupported(callbackContext);
             return true;
-        } 
+        }
         return false;
     }
-
+    
     @Override
     public void onConfigurationChanged(Configuration newConfig){
         if(callback != null){
@@ -66,7 +64,7 @@ public class PIPPlugin extends CordovaPlugin {
             }
         }
     }
-
+    
     public void callbackFunction(boolean op, String str){
         if(op){
             PluginResult result = new PluginResult(PluginResult.Status.OK, str);
@@ -78,29 +76,32 @@ public class PIPPlugin extends CordovaPlugin {
             callback.sendPluginResult(result);
         }
     }
-
+    
     private void enterPip(Double width, Double height, CallbackContext callbackContext) {
         try{
-            if(width != null && width > 0 && height != null && height > 0){
-                Rational aspectRatio = new Rational(Integer.valueOf(width.intValue()), Integer.valueOf(height.intValue()));
-                pictureInPictureParamsBuilder.setAspectRatio(aspectRatio).build();
-                this.cordova.getActivity().enterPictureInPictureMode(pictureInPictureParamsBuilder.build());
-
-                callbackContext.success("Scaled picture-in-picture mode started.");
-            } else {
-                this.cordova.getActivity().enterPictureInPictureMode();
-
-                callbackContext.success("Default picture-in-picture mode started.");
+            this.initializePip();
+            if(!this.cordova.getActivity().isInPictureInPictureMode()){
+				if(width != null && width > 0 && height != null && height > 0){
+					Rational aspectRatio = new Rational(Integer.valueOf(width.intValue()), Integer.valueOf(height.intValue()));
+					pictureInPictureParamsBuilder.setAspectRatio(aspectRatio).build();
+					this.cordova.getActivity().enterPictureInPictureMode(pictureInPictureParamsBuilder.build());
+					callbackContext.success("Scaled picture-in-picture mode started.");
+				} else {
+					this.cordova.getActivity().enterPictureInPictureMode();
+					callbackContext.success("Default picture-in-picture mode started.");
+				}
             }
         } catch(Exception e){
             String stackTrace = Log.getStackTraceString(e);
             callbackContext.error(stackTrace);
         }             
     }
-
+    
     public void isPip(CallbackContext callbackContext) {
         try{
-            if(this.cordova.getActivity().isInPictureInPictureMode()){
+			if(pictureInPictureParamsBuilder == null){
+                callbackContext.success("false");
+			} else if(this.cordova.getActivity().isInPictureInPictureMode()){
                 callbackContext.success("true");
             } else {
                 callbackContext.success("false");
@@ -110,11 +111,10 @@ public class PIPPlugin extends CordovaPlugin {
             callbackContext.error(stackTrace);
         }
     }
-
+    
     private void isPipModeSupported(CallbackContext callbackContext) {
         try{
             boolean supported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O; //>= SDK 26 //Oreo
-
             if(supported){
                 callbackContext.success("true");
             } else {
@@ -125,4 +125,17 @@ public class PIPPlugin extends CordovaPlugin {
             callbackContext.error(stackTrace);
         }
     }
+    
+    private void initializePip() {
+        try{
+			if(pictureInPictureParamsBuilder == null){
+				pictureInPictureParamsBuilder = new PictureInPictureParams.Builder();
+			}
+        } catch(Exception e){
+			pictureInPictureParamsBuilder = null;
+            String stackTrace = Log.getStackTraceString(e);
+			Log.d(TAG, stackTrace);
+        }
+    }
+    
 }
