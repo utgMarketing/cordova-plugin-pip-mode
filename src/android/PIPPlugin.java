@@ -1,6 +1,8 @@
 package tv.megacubo.pip;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.app.Activity;
 import android.app.PictureInPictureParams;
 import android.util.Rational;
 import android.util.Log;
@@ -11,7 +13,6 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.PluginResult;
-import android.content.res.Configuration;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,7 +31,12 @@ public class PIPPlugin extends CordovaPlugin {
         if(action.equals("enter")){
             Double width = args.getDouble(0);
             Double height = args.getDouble(1);
-            this.enterPip(width, height, callbackContext);
+            cordova.getThreadPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    enterPip(width, height, callbackContext);
+                }
+            });
             return true;
         } else if(action.equals("isPip")){
             this.isPip(callbackContext);
@@ -53,13 +59,16 @@ public class PIPPlugin extends CordovaPlugin {
     public void onConfigurationChanged(Configuration newConfig){
         if(callback != null){
             try{
-                if(this.cordova.getActivity().isInPictureInPictureMode()){
+                boolean active = this.cordova.getActivity().isInPictureInPictureMode(); //>= SDK 26 //Oreo
+                Log.d(TAG, "pipChanged " + active);
+                if(active){
                     this.callbackFunction(true, "true");
                 } else {
                     this.callbackFunction(true, "false");
                 }
             } catch(Exception e){
                 String stackTrace = Log.getStackTraceString(e);
+                Log.d(TAG, "pipChanged ERR " + stackTrace);
                 this.callbackFunction(false, stackTrace);
             }
         }
@@ -80,19 +89,29 @@ public class PIPPlugin extends CordovaPlugin {
     private void enterPip(Double width, Double height, CallbackContext callbackContext) {
         try{
             this.initializePip();
-            if(!this.cordova.getActivity().isInPictureInPictureMode()){
+            Activity activity = this.cordova.getActivity();
+            boolean active = activity.isInPictureInPictureMode(); //>= SDK 26 //Oreo
+			Log.d(TAG, "enterPip " + active);
+            if(active){
+                callbackContext.success("Already in picture-in-picture mode.");
+            } else {
 				if(width != null && width > 0 && height != null && height > 0){
+                    Context context = cordova.getActivity().getApplicationContext();
+                    Intent openMainActivity = new Intent(context, activity.getClass());
+                    openMainActivity.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                    activity.startActivityIfNeeded(openMainActivity, 0);
 					Rational aspectRatio = new Rational(Integer.valueOf(width.intValue()), Integer.valueOf(height.intValue()));
 					pictureInPictureParamsBuilder.setAspectRatio(aspectRatio).build();
-					this.cordova.getActivity().enterPictureInPictureMode(pictureInPictureParamsBuilder.build());
+					activity.enterPictureInPictureMode(pictureInPictureParamsBuilder.build());
 					callbackContext.success("Scaled picture-in-picture mode started.");
 				} else {
-					this.cordova.getActivity().enterPictureInPictureMode();
+					activity.enterPictureInPictureMode();
 					callbackContext.success("Default picture-in-picture mode started.");
 				}
             }
         } catch(Exception e){
             String stackTrace = Log.getStackTraceString(e);
+			Log.d(TAG, "enterPip ERR " + stackTrace);
             callbackContext.error(stackTrace);
         }             
     }
@@ -127,14 +146,14 @@ public class PIPPlugin extends CordovaPlugin {
     }
     
     private void initializePip() {
-        try{
-			if(pictureInPictureParamsBuilder == null){
-				pictureInPictureParamsBuilder = new PictureInPictureParams.Builder();
-			}
-        } catch(Exception e){
-			pictureInPictureParamsBuilder = null;
-            String stackTrace = Log.getStackTraceString(e);
-			Log.d(TAG, stackTrace);
+        if(pictureInPictureParamsBuilder == null){
+            try {
+                pictureInPictureParamsBuilder = new PictureInPictureParams.Builder();
+            } catch(Exception e){
+                pictureInPictureParamsBuilder = null;
+                String stackTrace = Log.getStackTraceString(e);
+                Log.d(TAG, stackTrace);
+            }
         }
     }
     
