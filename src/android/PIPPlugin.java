@@ -21,9 +21,18 @@ public class PIPPlugin extends CordovaPlugin {
     private PictureInPictureParams.Builder pictureInPictureParamsBuilder = null;
     private CallbackContext callback = null;
 	private String TAG = "PIPPlugin";
+	private boolean hasPIPMode = false;
 	
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
+        hasPIPMode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O; //>= SDK 26 //Oreo
+		if(hasPIPMode){
+			try{
+				Class.forName("android.app.PictureInPictureParams");
+			} catch(Exception e) {
+				hasPIPMode = false;
+			}
+		}
     }
     
     @Override    
@@ -57,7 +66,8 @@ public class PIPPlugin extends CordovaPlugin {
     
     @Override
     public void onConfigurationChanged(Configuration newConfig){
-        if(callback != null){
+        super.onConfigurationChanged(newConfig);
+        if(callback != null && hasPIPMode){
             try{
                 boolean active = this.cordova.getActivity().isInPictureInPictureMode(); //>= SDK 26 //Oreo
                 Log.d(TAG, "pipChanged " + active);
@@ -89,25 +99,29 @@ public class PIPPlugin extends CordovaPlugin {
     private void enterPip(Double width, Double height, CallbackContext callbackContext) {
         try{
             this.initializePip();
-            Activity activity = this.cordova.getActivity();
-            boolean active = activity.isInPictureInPictureMode(); //>= SDK 26 //Oreo
-			Log.d(TAG, "enterPip " + active);
-            if(active){
-                callbackContext.success("Already in picture-in-picture mode.");
-            } else {
-				if(width != null && width > 0 && height != null && height > 0){
-                    Context context = cordova.getActivity().getApplicationContext();
-                    Intent openMainActivity = new Intent(context, activity.getClass());
-                    openMainActivity.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                    activity.startActivityIfNeeded(openMainActivity, 0);
-					Rational aspectRatio = new Rational(Integer.valueOf(width.intValue()), Integer.valueOf(height.intValue()));
-					pictureInPictureParamsBuilder.setAspectRatio(aspectRatio).build();
-					activity.enterPictureInPictureMode(pictureInPictureParamsBuilder.build());
-					callbackContext.success("Scaled picture-in-picture mode started.");
+            if(pictureInPictureParamsBuilder != null){
+				Activity activity = this.cordova.getActivity();
+				boolean active = activity.isInPictureInPictureMode(); //>= SDK 26 //Oreo
+				Log.d(TAG, "enterPip " + active);
+				if(active){
+					callbackContext.success("Already in picture-in-picture mode.");
 				} else {
-					activity.enterPictureInPictureMode();
-					callbackContext.success("Default picture-in-picture mode started.");
+					if(width != null && width > 0 && height != null && height > 0){
+						Context context = cordova.getActivity().getApplicationContext();
+						Intent openMainActivity = new Intent(context, activity.getClass());
+						openMainActivity.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+						activity.startActivityIfNeeded(openMainActivity, 0);
+						Rational aspectRatio = new Rational(Integer.valueOf(width.intValue()), Integer.valueOf(height.intValue()));
+						pictureInPictureParamsBuilder.setAspectRatio(aspectRatio).build();
+						activity.enterPictureInPictureMode(pictureInPictureParamsBuilder.build());
+						callbackContext.success("Scaled picture-in-picture mode started.");
+					} else {
+						activity.enterPictureInPictureMode();
+						callbackContext.success("Default picture-in-picture mode started.");
+					}
 				}
+            } else {
+				throw new Exception("Picture-in-picture unavailable.");
             }
         } catch(Exception e){
             String stackTrace = Log.getStackTraceString(e);
@@ -116,45 +130,36 @@ public class PIPPlugin extends CordovaPlugin {
         }             
     }
     
-    public void isPip(CallbackContext callbackContext) {
-        try{
-			if(pictureInPictureParamsBuilder == null){
-                callbackContext.success("false");
-			} else if(this.cordova.getActivity().isInPictureInPictureMode()){
-                callbackContext.success("true");
-            } else {
-                callbackContext.success("false");
-            }
-        } catch(Exception e){
-            String stackTrace = Log.getStackTraceString(e);
-            callbackContext.error(stackTrace);
-        }
-    }
-    
     private void isPipModeSupported(CallbackContext callbackContext) {
-        try{
-            boolean supported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O; //>= SDK 26 //Oreo
-            if(supported){
-                callbackContext.success("true");
-            } else {
-                callbackContext.success("false");
-            }
-        } catch(Exception e){
-            String stackTrace = Log.getStackTraceString(e);
-            callbackContext.error(stackTrace);
-        }
+		if(hasPIPMode){
+			callbackContext.success("true");
+		} else {
+			callbackContext.success("false");
+		}
     }
     
     private void initializePip() {
         if(pictureInPictureParamsBuilder == null){
-            try {
-                pictureInPictureParamsBuilder = new PictureInPictureParams.Builder();
-            } catch(Exception e){
-                pictureInPictureParamsBuilder = null;
-                String stackTrace = Log.getStackTraceString(e);
-                Log.d(TAG, stackTrace);
-            }
+			if(hasPIPMode){
+				try {
+					pictureInPictureParamsBuilder = new PictureInPictureParams.Builder();
+				} catch(Exception e){
+					pictureInPictureParamsBuilder = null;
+					String stackTrace = Log.getStackTraceString(e);
+					Log.d(TAG, stackTrace);
+				}
+			} else {
+				Log.d(TAG, "PIP unavailable.");
+			}
         }
+    }
+    
+    public void isPip(CallbackContext callbackContext) {
+		String ret = "false";
+		if(hasPIPMode && pictureInPictureParamsBuilder != null && this.cordova.getActivity().isInPictureInPictureMode()){
+			ret = "true";
+		}
+		callbackContext.success(ret);
     }
     
 }
