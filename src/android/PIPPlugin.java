@@ -16,13 +16,15 @@ import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.util.ArrayList;
+import android.app.RemoteAction;
 
 public class PIPPlugin extends CordovaPlugin {
     private PictureInPictureParams.Builder pictureInPictureParamsBuilder = null;
     private CallbackContext callback = null;
 	private String TAG = "PIPPlugin";
 	private boolean hasPIPMode = false;
-	
+
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
         hasPIPMode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O; //>= SDK 26 //Oreo
@@ -34,8 +36,8 @@ public class PIPPlugin extends CordovaPlugin {
 			}
 		}
     }
-    
-    @Override    
+
+    @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         if(action.equals("enter")){
             Double width = args.getDouble(0);
@@ -63,7 +65,7 @@ public class PIPPlugin extends CordovaPlugin {
         }
         return false;
     }
-    
+
     @Override
     public void onConfigurationChanged(Configuration newConfig){
         super.onConfigurationChanged(newConfig);
@@ -83,7 +85,7 @@ public class PIPPlugin extends CordovaPlugin {
             }
         }
     }
-    
+
     public void callbackFunction(boolean op, String str){
         if(op){
             PluginResult result = new PluginResult(PluginResult.Status.OK, str);
@@ -95,7 +97,7 @@ public class PIPPlugin extends CordovaPlugin {
             callback.sendPluginResult(result);
         }
     }
-    
+
     private void enterPip(Double width, Double height, CallbackContext callbackContext) {
         try{
             this.initializePip();
@@ -106,13 +108,16 @@ public class PIPPlugin extends CordovaPlugin {
 				if(active){
 					callbackContext.success("Already in picture-in-picture mode.");
 				} else {
+
+				    ArrayList<RemoteAction> actions=new ArrayList<>();
+
 					if(width != null && width > 0 && height != null && height > 0){
 						Context context = cordova.getActivity().getApplicationContext();
 						Intent openMainActivity = new Intent(context, activity.getClass());
 						openMainActivity.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
 						activity.startActivityIfNeeded(openMainActivity, 0);
 						Rational aspectRatio = new Rational(Integer.valueOf(width.intValue()), Integer.valueOf(height.intValue()));
-						pictureInPictureParamsBuilder.setAspectRatio(aspectRatio).build();
+						pictureInPictureParamsBuilder.setAspectRatio(aspectRatio).setActions(actions).build();
 						activity.enterPictureInPictureMode(pictureInPictureParamsBuilder.build());
 						callbackContext.success("Scaled picture-in-picture mode started.");
 					} else {
@@ -127,9 +132,9 @@ public class PIPPlugin extends CordovaPlugin {
             String stackTrace = Log.getStackTraceString(e);
 			Log.d(TAG, "enterPip ERR " + stackTrace);
             callbackContext.error(stackTrace);
-        }             
+        }
     }
-    
+
     private void isPipModeSupported(CallbackContext callbackContext) {
 		if(hasPIPMode){
 			callbackContext.success("true");
@@ -137,7 +142,7 @@ public class PIPPlugin extends CordovaPlugin {
 			callbackContext.success("false");
 		}
     }
-    
+
     private void initializePip() {
         if(pictureInPictureParamsBuilder == null){
 			if(hasPIPMode){
@@ -153,7 +158,7 @@ public class PIPPlugin extends CordovaPlugin {
 			}
         }
     }
-    
+
     public void isPip(CallbackContext callbackContext) {
 		String ret = "false";
 		if(hasPIPMode && pictureInPictureParamsBuilder != null && this.cordova.getActivity().isInPictureInPictureMode()){
@@ -161,5 +166,5 @@ public class PIPPlugin extends CordovaPlugin {
 		}
 		callbackContext.success(ret);
     }
-    
+
 }
