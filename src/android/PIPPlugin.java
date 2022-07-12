@@ -118,7 +118,7 @@ public class PIPPlugin extends CordovaPlugin {
 						activity.startActivityIfNeeded(openMainActivity, 0);
 						Rational aspectRatio = new Rational(Integer.valueOf(width.intValue()), Integer.valueOf(height.intValue()));
 						pictureInPictureParamsBuilder.setAspectRatio(aspectRatio).setActions(actions).build();
-						activity.enterPictureInPictureMode(pictureInPictureParamsBuilder.build());
+						activity.enterPictureInPictureMode(pictureInPictureParamsBuilder.setActions(actions).build());
 						callbackContext.success("Scaled picture-in-picture mode started.");
 					} else {
 						activity.enterPictureInPictureMode();
